@@ -1,32 +1,47 @@
 import rospy
 from mavros.srv import ParamSet
 from mavros.srv import StreamRate
+from mavros.srv import CommandBool
 
 def set_sys_id(id):
-    success=True
+    success = True
 
     try:
         rospy.wait_for_service("mavros/param/set", 10)
-        paramSrv = rospy.ServiceProxy("mavros/param/set", ParamSet)
-        param = paramSrv("SYSID_MYGCS", id)
+        param_srv = rospy.ServiceProxy("mavros/param/set", ParamSet)
+        param = param_srv("SYSID_MYGCS", id)
         if not param.success:
-            success=False
+            success = False
     except:
-        success=False
+        success = False
 
     return success
 
 def set_stream_rate(rate):
-    success=True
+    success = True
 
     try:
         rospy.wait_for_service("mavros/set_stream_rate", 10)
-        streamRateSrv = rospy.ServiceProxy("mavros/set_stream_rate", StreamRate)
-        param = streamRateSrv(stream_id=0, message_rate=rate, on_off=(rate != 0))
+        stream_rate_srv = rospy.ServiceProxy("mavros/set_stream_rate", StreamRate)
+        param = stream_rate_srv(stream_id=0, message_rate=rate, on_off=(rate != 0))
         if not param:
-            success=False
+            success = False
     except:
-        success=False
+        success = False
+
+    return success
+
+def arm(enable):
+    success = True
+
+    try:
+        rosspy.wait_for_service("mavros/cmd/arming")
+        arm_srv = rospy.ServiceProxy("mavros/cmd/arming", CommandBool)
+        param = arm_srv(enable)
+        if not param.success:
+            success = False
+    except:
+        success = False
 
     return success
 
