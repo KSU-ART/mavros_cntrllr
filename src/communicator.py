@@ -1,7 +1,11 @@
 import rospy
-from mavros.srv import ParamSet
-from mavros.srv import StreamRate
-from mavros.srv import CommandBool
+import mavros
+from mavros.srv import ParamSet, StreamRate, CommandBool, OverrideRCIn
+
+def get_proxy(namespace, service, type, timeout=10):
+    topic = mavros.get_topic(namespace, service)
+    rospy.wait_for_service(topic, timeout)
+    return rospy.ServiceProxy(topic, type)
 
 def set_sys_id(id):
     success = True
@@ -45,6 +49,22 @@ def arm(enable):
 
     return success
 
+global override_message
+
+def set_override_message(roll, pitch, yaw, throttle, forward, lateral):
+    PitchChan, RollChan, ThrottleChan, YawChan, ForwardChan, LateralChan = range(6)
+
+    message = OverrideRCIn()
+    message.channels[RollChan] = roll
+    message.channels[PitchChan] = pitch
+    message.channels[YawChan] = yaw
+    message.channels[ThrottleChan] = throttle
+    message.channels[ForwardChan] = forward
+    message.channels[LateralChan] = lateral
+
+    override_message = message
+
+
 if __name__ == "__main__":
     rospy.init_node("SYSID_MYGCS")
     rospy.init_node("set_stream_rate")
@@ -54,3 +74,9 @@ if __name__ == "__main__":
 
     set_sys_id(sys_id)
     set_stream_rate(rate)
+
+    pub = rospy.Publisher("mavros/rc/override", OverrideRCIn, queue_size=10)
+
+    while not rospy.is_shutdown():
+        pub.publish(override_message)
+        rospy.sleep(45)
